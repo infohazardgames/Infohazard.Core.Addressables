@@ -1,0 +1,15 @@
+{
+  "name": "com.infohazard.core.addressables",
+  "displayName": "Infohazard.Core.Addressables",
+  "version": "1.0.0",
+  "unity": "2020.3",
+  "description": "Extension to Infohazard.Core which adds support for Addressables in the Spawnable system.",
+  "keywords": [],
+  "repository": {
+    "url": "https://github.com/infohazardgames/Infohazard.Core.Addressables.git",
+    "type": "git"
+  },
+  "dependencies": {
+    "com.unity.addressables": "1.19.19"
+  }
+}
