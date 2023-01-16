@@ -4,10 +4,10 @@ using UnityEditor;
 using UnityEngine;
 
 namespace Infohazard.Core.Addressables.Editor {
-    [CustomPropertyDrawer(typeof(AddressableSpawnBase), true)]
-    public class AddressableSpawnBaseDrawer : PropertyDrawer {
+    [CustomPropertyDrawer(typeof(AddressableSpawnRefBase), true)]
+    public class AddressableSpawnRefDrawer : PropertyDrawer {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-            SerializedProperty childProp = property.FindPropertyRelative(AddressableSpawnBase.FieldNames.AssetReference);
+            SerializedProperty childProp = property.FindPropertyRelative(AddressableSpawnRefBase.FieldNames.AssetReference);
             SerializedProperty guidProp = childProp.FindPropertyRelative("m_AssetGUID");
 
             EditorGUI.BeginChangeCheck();
@@ -21,7 +21,7 @@ namespace Infohazard.Core.Addressables.Editor {
 
             Type curType = fieldInfo.FieldType;
 
-            while (curType.BaseType != typeof(AddressableSpawnBase)) {
+            while (curType.BaseType != typeof(AddressableSpawnRefBase)) {
                 curType = curType.BaseType;
 
                 if (curType == null) {

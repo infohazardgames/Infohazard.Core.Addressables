@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
@@ -6,17 +7,16 @@ namespace Infohazard.Core.Addressables {
     public class AddressablePoolHandler : DefaultPoolHandler {
         public object Key { get; }
 
-        public int ReferenceCount { get; private set; }
-
-        public int RetainCount { get; private set; }
-
         public LoadState State { get; private set; }
+
+        public int ReferenceCount { get; private set; }
 
         public AsyncOperationHandle<GameObject> LoadOperation { get; private set; }
 
-        private readonly Action<Spawnable> _spawnedObjectDestroyedDelegate;
         private Action _loadSucceeded;
         private Action _loadFailed;
+        
+        private readonly Action<Spawnable> _spawnedObjectDestroyedDelegate;
 
         public AddressablePoolHandler(object key, Transform transform) : base(null, transform) {
             Key = key;
@@ -70,23 +70,62 @@ namespace Infohazard.Core.Addressables {
             }
 
             Spawnable result = base.Instantiate();
-            ReferenceCount++;
             result.Destroyed += _spawnedObjectDestroyedDelegate;
             return result;
         }
 
-        protected virtual void SpawnedObjectDestroyed(Spawnable spawnable) {
+        protected override void Destroy(Spawnable obj) {
+            obj.Destroyed -= _spawnedObjectDestroyedDelegate;
+            base.Destroy(obj);
+        }
+
+        public override Spawnable Spawn() {
+            Spawnable instance = base.Spawn();
+            ReferenceCount++;
+            return instance;
+        }
+
+        public override void Despawn(Spawnable instance) {
             if (ReferenceCount < 1) {
                 Debug.LogError($"Reference count for {this} trying to go negative (this should not happen).");
                 return;
             }
-
+            
+            base.Despawn(instance);
             ReferenceCount--;
-            CheckReleaseAsset();
+            CheckClear();
         }
 
-        public void Retain(Action loadSucceeded = null, Action loadFailed = null) {
-            RetainCount++;
+        protected virtual void SpawnedObjectDestroyed(Spawnable spawnable) {
+            if (spawnable.IsSpawned) {
+                if (ReferenceCount < 1) {
+                    Debug.LogError($"Reference count for {this} trying to go negative (this should not happen).");
+                    return;
+                }
+                ReferenceCount--;
+                CheckClear();
+            } else {
+                Pool.Remove(spawnable);
+            }
+        }
+
+        public async UniTask RetainAsync() {
+            base.Retain();
+
+            if (State != LoadState.NotLoaded) return;
+            
+            LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
+            State = LoadState.Loading;
+            await LoadOperation;
+            LoadCompleted(LoadOperation);
+        }
+
+        public override void Retain() {
+            Retain(null);
+        }
+
+        public void Retain(Action loadSucceeded, Action loadFailed = null) {
+            base.Retain();
 
             if (State == LoadState.NotLoaded) {
                 LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
@@ -110,21 +149,15 @@ namespace Infohazard.Core.Addressables {
             }
         }
 
-        public void Release() {
-            if (RetainCount < 1) {
-                Debug.LogError($"Releasing {this} more times than it was retained.");
-                return;
-            }
+        protected override bool ShouldClear() => base.ShouldClear() && ReferenceCount == 0;
 
-            RetainCount--;
-            CheckReleaseAsset();
-        }
-
-        protected virtual void CheckReleaseAsset() {
-            if (RetainCount + ReferenceCount > 0 || State != LoadState.Loaded) return;
-
+        protected override void Clear() {
+            base.Clear();
+            
             UnityEngine.AddressableAssets.Addressables.Release(LoadOperation);
             LoadOperation = default;
+            Prefab = null;
+            State = LoadState.NotLoaded;
         }
 
         public enum LoadState {
