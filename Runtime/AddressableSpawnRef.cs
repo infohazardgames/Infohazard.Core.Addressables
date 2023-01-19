@@ -11,6 +11,8 @@ namespace Infohazard.Core.Addressables {
     public abstract class AddressableSpawnRefBase {
         [SerializeField] protected AssetReferenceGameObject _assetReference;
 
+        public AssetReferenceGameObject AssetReference => _assetReference;
+
         public static class FieldNames {
             public const string AssetReference = nameof(_assetReference);
         }
@@ -22,9 +24,11 @@ namespace Infohazard.Core.Addressables {
 
         public bool Valid => _assetReference?.RuntimeKeyIsValid() == true;
         public bool Loaded => _prefab != null && _handler is { State: AddressablePoolHandler.LoadState.Loaded };
+        public int RetainCount { get; private set; }
+        
+        private T _prefab;
         public T Prefab => _prefab;
 
-        private T _prefab;
 
         public AddressableSpawnRefBase() { }
 
@@ -32,32 +36,51 @@ namespace Infohazard.Core.Addressables {
             _assetReference = assetReference;
         }
 
-        public virtual async UniTask RetainAsync() {
-            _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
-            if (_handler.State != AddressablePoolHandler.LoadState.NotLoaded) return;
-
-            await _handler.RetainAsync();
-
-            _prefab = null;
-            if (_handler.State == AddressablePoolHandler.LoadState.Loaded &&
-                !ValidatePrefab(_handler.Prefab, out _prefab)) {
-                Debug.LogError($"Loaded object {_handler.Prefab} does not contain {nameof(T)}.");
-                _prefab = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        ~AddressableSpawnRefBase() {
+            if (RetainCount != 0) {
+                Debug.LogError($"{this} left with nonzero retain count {RetainCount}!");
             }
+        }
+#endif
+
+        public virtual async UniTask RetainAsync() {
+            RetainCount++;
+            _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
+            await _handler.RetainAsync();
+            ValidateLoadedHandler();
+        }
+
+        public virtual void RetainAndWait() {
+            RetainCount++;
+            _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
+            _handler.RetainAndWait();
+            ValidateLoadedHandler();
         }
 
         public virtual void Retain(Action loadSucceeded = null, Action loadFailed = null) {
+            RetainCount++;
             _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
-
-            _prefab = null;
             _handler.Retain(() => {
-                if (ValidatePrefab(_handler.Prefab, out _prefab)) {
+                if (ValidateLoadedHandler()) {
                     loadSucceeded?.Invoke();
                 } else {
                     loadFailed?.Invoke();
-                    Debug.LogError($"Loaded object {_handler.Prefab} does not contain {nameof(T)}.");
                 }
             }, loadFailed);
+        }
+
+        protected virtual bool ValidateLoadedHandler() {
+            if (_prefab) return true;
+            if (_handler.State == AddressablePoolHandler.LoadState.Failed) return false;
+            
+            if (!ValidatePrefab(_handler.Prefab, out _prefab)) {
+                Debug.LogError($"Loaded object {_handler.Prefab} does not contain {nameof(T)}.");
+                _prefab = null;
+                return false;
+            }
+
+            return true;
         }
 
         public virtual void Release() {
@@ -66,7 +89,17 @@ namespace Infohazard.Core.Addressables {
                 return;
             }
 
+            if (RetainCount < 1) {
+                Debug.LogError($"Releasing {this} more times than it was retained.");
+                return;
+            }
+
+            RetainCount--;
             _handler.Release();
+
+            if (RetainCount == 0) {
+                _prefab = null;
+            }
         }
 
         public T Spawn(in SpawnParams spawnParams = default) {

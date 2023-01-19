@@ -25,7 +25,8 @@ namespace Infohazard.Core.Addressables {
         }
 
         public override string ToString() {
-            return $"{GetType().Name} ({Key})";
+            string prefabString = Prefab ? Prefab.name : "null";
+            return $"{GetType().Name} ({Key}) ({prefabString})";
         }
 
         protected virtual void LoadCompleted(AsyncOperationHandle<GameObject> operation) {
@@ -35,16 +36,20 @@ namespace Infohazard.Core.Addressables {
                 Prefab = spawnable;
                 _loadSucceeded?.Invoke();
                 _loadFailed = _loadSucceeded = null;
+                
+                // If everyone releases the handler before loading completes, just immediately discard.
+                CheckClear();
                 return;
             }
 
             if (operation.Status == AsyncOperationStatus.Succeeded) {
                 Debug.LogError($"Asset loaded by {this} must have a Spawnable component.");
+                UnityEngine.AddressableAssets.Addressables.Release(operation);
             }
 
             State = LoadState.Failed;
-            UnityEngine.AddressableAssets.Addressables.Release(operation);
             LoadOperation = default;
+            Prefab = null;
             _loadFailed?.Invoke();
             _loadFailed = _loadSucceeded = null;
         }
@@ -112,11 +117,23 @@ namespace Infohazard.Core.Addressables {
         public async UniTask RetainAsync() {
             base.Retain();
 
+            if (State == LoadState.NotLoaded) {
+                LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
+                State = LoadState.Loading;
+                await LoadOperation;
+                LoadCompleted(LoadOperation);
+            } else if (State == LoadState.Loading) {
+                await LoadOperation;
+            }
+        }
+
+        public void RetainAndWait() {
+            base.Retain();
+
             if (State != LoadState.NotLoaded) return;
             
             LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
-            State = LoadState.Loading;
-            await LoadOperation;
+            LoadOperation.WaitForCompletion();
             LoadCompleted(LoadOperation);
         }
 
@@ -153,6 +170,10 @@ namespace Infohazard.Core.Addressables {
 
         protected override void Clear() {
             base.Clear();
+
+            // If not loaded or failed, nothing to do.
+            // If loading, the following will be taken care of in the LoadCompleted callback.
+            if (State != LoadState.Loaded) return;
             
             UnityEngine.AddressableAssets.Addressables.Release(LoadOperation);
             LoadOperation = default;
