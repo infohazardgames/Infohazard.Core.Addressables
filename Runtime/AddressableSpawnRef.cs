@@ -29,11 +29,15 @@ namespace Infohazard.Core.Addressables {
         private T _prefab;
         public T Prefab => _prefab;
 
-
         public AddressableSpawnRefBase() { }
 
         public AddressableSpawnRefBase(AssetReferenceGameObject assetReference) {
             _assetReference = assetReference;
+        }
+
+        public override string ToString() {
+            string prefabString = Prefab ? Prefab.name : "null";
+            return $"{GetType().Name} ({AssetReference.AssetGUID}) ({prefabString})";
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
