@@ -124,6 +124,8 @@ namespace Infohazard.Core.Addressables {
                 LoadCompleted(LoadOperation);
             } else if (State == LoadState.Loading) {
                 await LoadOperation;
+                // Delay 1 frame to ensure LoadCompleted runs.
+                await UniTask.DelayFrame(1);
             }
         }
 
