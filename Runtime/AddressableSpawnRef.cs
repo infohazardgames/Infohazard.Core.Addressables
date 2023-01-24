@@ -22,7 +22,7 @@ namespace Infohazard.Core.Addressables {
     public abstract class AddressableSpawnRefBase<T> : AddressableSpawnRefBase where T : Object {
         private AddressablePoolHandler _handler;
 
-        public bool Valid => _assetReference?.RuntimeKeyIsValid() == true;
+        public bool IsValid => _assetReference?.RuntimeKeyIsValid() == true;
         public bool Loaded => _prefab != null && _handler is { State: AddressablePoolHandler.LoadState.Loaded };
         public int RetainCount { get; private set; }
         
@@ -78,7 +78,7 @@ namespace Infohazard.Core.Addressables {
             if (_prefab) return true;
             if (_handler.State == AddressablePoolHandler.LoadState.Failed) return false;
             
-            if (!ValidatePrefab(_handler.Prefab, out _prefab)) {
+            if (!ValidateObject(_handler.Prefab, out _prefab)) {
                 Debug.LogError($"Loaded object {_handler.Prefab} does not contain {nameof(T)}.");
                 _prefab = null;
                 return false;
@@ -112,10 +112,11 @@ namespace Infohazard.Core.Addressables {
                 return null;
             }
 
-            return PoolManager.Instance.SpawnFromKey(_assetReference.AssetGUID, spawnParams).GetComponent<T>();
+            ValidateObject(PoolManager.Instance.SpawnFromKey(_assetReference.AssetGUID, spawnParams), out T result);
+            return result;
         }
 
-        protected abstract bool ValidatePrefab(Spawnable obj, out T result);
+        protected abstract bool ValidateObject(Spawnable obj, out T result);
     }
 
     [Serializable]
@@ -124,7 +125,7 @@ namespace Infohazard.Core.Addressables {
 
         public AddressableSpawnRef(AssetReferenceGameObject assetReference) : base(assetReference) { }
 
-        protected override bool ValidatePrefab(Spawnable obj, out GameObject result) {
+        protected override bool ValidateObject(Spawnable obj, out GameObject result) {
             result = obj.gameObject;
             return true;
         }
@@ -136,7 +137,7 @@ namespace Infohazard.Core.Addressables {
 
         public AddressableSpawnRef(AssetReferenceGameObject assetReference) : base(assetReference) { }
 
-        protected override bool ValidatePrefab(Spawnable obj, out T component) {
+        protected override bool ValidateObject(Spawnable obj, out T component) {
             return obj.TryGetComponent(out component);
         }
     }

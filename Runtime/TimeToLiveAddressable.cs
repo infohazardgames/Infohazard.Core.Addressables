@@ -15,20 +15,20 @@ namespace Infohazard.Core.Addressables {
 
         protected override void Awake() {
             base.Awake();
-            if (_spawnOnDeathAddress.Valid) {
+            if (_spawnOnDeathAddress.IsValid) {
                 _spawnOnDeathAddress.Retain();
             }
         }
 
         protected override void OnDestroy() {
             base.OnDestroy();
-            if (_spawnOnDeathAddress.Valid) {
+            if (_spawnOnDeathAddress.IsValid) {
                 _spawnOnDeathAddress.Release();
             }
         }
         
         protected override void DestroySelf() {
-            if (_spawnOnDeathAddress.Valid) {
+            if (_spawnOnDeathAddress.IsValid) {
                 _spawnOnDeathAddress.Spawn(new SpawnParams {
                     Position = transform.position,
                     Rotation = transform.rotation,
