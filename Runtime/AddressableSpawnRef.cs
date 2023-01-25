@@ -48,30 +48,36 @@ namespace Infohazard.Core.Addressables {
         }
 #endif
 
-        public virtual async UniTask RetainAsync() {
+        public virtual UniTask RetainAndWaitAsync() {
             RetainCount++;
+
             _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
-            await _handler.RetainAsync();
+            _handler.Retain();
+            
+            return WaitUntilLoadedAsync();
+        }
+
+        public virtual async UniTask WaitUntilLoadedAsync() {
+            await _handler.WaitUntilLoadedAsync();
             ValidateLoadedHandler();
         }
 
         public virtual void RetainAndWait() {
             RetainCount++;
+            
             _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
-            _handler.RetainAndWait();
+            _handler.Retain();
+            
+            WaitUntilLoaded();
+        }
+
+        public virtual void WaitUntilLoaded() {
+            _handler.WaitUntilLoaded();
             ValidateLoadedHandler();
         }
 
-        public virtual void Retain(Action loadSucceeded = null, Action loadFailed = null) {
-            RetainCount++;
-            _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
-            _handler.Retain(() => {
-                if (ValidateLoadedHandler()) {
-                    loadSucceeded?.Invoke();
-                } else {
-                    loadFailed?.Invoke();
-                }
-            }, loadFailed);
+        public virtual void Retain() {
+            RetainAndWaitAsync().Forget();
         }
 
         protected virtual bool ValidateLoadedHandler() {

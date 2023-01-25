@@ -13,9 +13,6 @@ namespace Infohazard.Core.Addressables {
 
         public AsyncOperationHandle<GameObject> LoadOperation { get; private set; }
 
-        private Action _loadSucceeded;
-        private Action _loadFailed;
-        
         private readonly Action<Spawnable> _spawnedObjectDestroyedDelegate;
 
         public AddressablePoolHandler(object key, Transform transform) : base(null, transform) {
@@ -30,12 +27,12 @@ namespace Infohazard.Core.Addressables {
         }
 
         protected virtual void LoadCompleted(AsyncOperationHandle<GameObject> operation) {
+            if (State != LoadState.Loading) return;
+            
             if (operation.Status == AsyncOperationStatus.Succeeded &&
                 operation.Result.TryGetComponent(out Spawnable spawnable)) {
                 State = LoadState.Loaded;
                 Prefab = spawnable;
-                _loadSucceeded?.Invoke();
-                _loadFailed = _loadSucceeded = null;
                 
                 // If everyone releases the handler before loading completes, just immediately discard.
                 CheckClear();
@@ -50,8 +47,6 @@ namespace Infohazard.Core.Addressables {
             State = LoadState.Failed;
             LoadOperation = default;
             Prefab = null;
-            _loadFailed?.Invoke();
-            _loadFailed = _loadSucceeded = null;
         }
 
         protected override Spawnable Instantiate() {
@@ -114,58 +109,43 @@ namespace Infohazard.Core.Addressables {
             }
         }
 
-        public async UniTask RetainAsync() {
+        public UniTask RetainAndWaitAsync() {
             base.Retain();
-
+            
             if (State == LoadState.NotLoaded) {
                 LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
                 State = LoadState.Loading;
-                await LoadOperation;
-                LoadCompleted(LoadOperation);
-            } else if (State == LoadState.Loading) {
-                await LoadOperation;
-                // Delay 1 frame to ensure LoadCompleted runs.
-                await UniTask.DelayFrame(1);
             }
+
+            return WaitUntilLoadedAsync();
+        }
+
+        public async UniTask WaitUntilLoadedAsync() {
+            if (State != LoadState.Loading) return;
+            await LoadOperation;
+            LoadCompleted(LoadOperation);
         }
 
         public void RetainAndWait() {
             base.Retain();
 
-            if (State != LoadState.NotLoaded) return;
+            if (State == LoadState.NotLoaded) {
+                LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
+                State = LoadState.Loading;
+            }
             
-            LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
+            WaitUntilLoaded();
+        }
+
+        public void WaitUntilLoaded() {
+            if (State != LoadState.Loading) return;
             LoadOperation.WaitForCompletion();
             LoadCompleted(LoadOperation);
         }
 
         public override void Retain() {
-            Retain(null);
-        }
-
-        public void Retain(Action loadSucceeded, Action loadFailed = null) {
             base.Retain();
-
-            if (State == LoadState.NotLoaded) {
-                LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
-                LoadOperation.Completed += LoadCompleted;
-                State = LoadState.Loading;
-            }
-
-            switch (State) {
-                case LoadState.Loading:
-                    _loadSucceeded += loadSucceeded;
-                    _loadFailed += loadFailed;
-                    break;
-                case LoadState.Loaded:
-                    _loadSucceeded?.Invoke();
-                    break;
-                case LoadState.Failed:
-                    _loadFailed?.Invoke();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            RetainAndWaitAsync().Forget();
         }
 
         protected override bool ShouldClear() => base.ShouldClear() && ReferenceCount == 0;

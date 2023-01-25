@@ -6,7 +6,7 @@ namespace Infohazard.Core.Addressables {
         public static async UniTask<GameObject> SpawnAddressableAsync(object key, SpawnParams spawnParams = default) {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
 
-            await handler.RetainAsync();
+            await handler.RetainAndWaitAsync();
             try {
                 if (handler.State == AddressablePoolHandler.LoadState.Failed) {
                     return null;
@@ -38,7 +38,7 @@ namespace Infohazard.Core.Addressables {
         public static async UniTask<T> SpawnAddressableAsync<T>(object key, SpawnParams spawnParams = default) where T : Component {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
 
-            await handler.RetainAsync();
+            await handler.RetainAndWaitAsync();
             try {
                 if (handler.State == AddressablePoolHandler.LoadState.Failed) {
                     return null;
