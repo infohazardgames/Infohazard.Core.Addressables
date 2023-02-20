@@ -49,25 +49,31 @@ namespace Infohazard.Core.Addressables {
             Prefab = null;
         }
 
+        protected virtual bool EnsureLoaded() {
+            if (State == LoadState.NotLoaded) {
+                Debug.LogError($"{this} has a nonzero ref count but state is not loaded (this should not happen).");
+                return false;
+            }
+
+            if (State == LoadState.Loading) {
+                WaitUntilLoaded();
+            }
+
+            if (State == LoadState.Failed) {
+                Debug.LogError($"Attempting to instantiate using failed {this}.");
+                return false;
+            }
+
+            return true;
+        }
+
         protected override Spawnable Instantiate() {
             if (RetainCount < 1) {
                 Debug.LogError($"Instantiate called on {this} before Retain() was called.");
                 return null;
             }
 
-            if (State == LoadState.NotLoaded) {
-                Debug.LogError($"{this} has a nonzero ref count but state is not loaded (this should not happen).");
-                return null;
-            }
-
-            if (State == LoadState.Loading) {
-                LoadOperation.WaitForCompletion();
-            }
-
-            if (State == LoadState.Failed) {
-                Debug.LogError($"Attempting to instantiate using failed {this}.");
-                return null;
-            }
+            if (!EnsureLoaded()) return null;
 
             Spawnable result = base.Instantiate();
             result.Destroyed += _spawnedObjectDestroyedDelegate;
@@ -80,6 +86,8 @@ namespace Infohazard.Core.Addressables {
         }
 
         public override Spawnable Spawn() {
+            if (!EnsureLoaded()) return null;
+            
             Spawnable instance = base.Spawn();
             ReferenceCount++;
             return instance;
