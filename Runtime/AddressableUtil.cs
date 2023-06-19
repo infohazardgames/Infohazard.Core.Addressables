@@ -35,7 +35,7 @@ namespace Infohazard.Core.Addressables {
             }
         }
         
-        public static async UniTask<T> SpawnAddressableAsync<T>(object key, SpawnParams spawnParams = default) where T : Component {
+        public static async UniTask<T> SpawnAddressableAsync<T>(object key, SpawnParams spawnParams = default) where T : class {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
 
             await handler.RetainAndWaitAsync();
@@ -45,7 +45,7 @@ namespace Infohazard.Core.Addressables {
                 }
 
                 if (!handler.Prefab.TryGetComponent(out T _)) {
-                    Debug.LogError($"Loaded object {handler.Prefab} does not contain {nameof(T)}.");
+                    Debug.LogError($"Loaded object {handler.Prefab} does not contain {typeof(T).Name}.");
                     return null;
                 }
                 
@@ -57,7 +57,7 @@ namespace Infohazard.Core.Addressables {
             }
         }
         
-        public static T SpawnAddressable<T>(object key, SpawnParams spawnParams = default) where T : Component {
+        public static T SpawnAddressable<T>(object key, SpawnParams spawnParams = default) where T : class {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
 
             handler.RetainAndWait();
@@ -67,7 +67,7 @@ namespace Infohazard.Core.Addressables {
                 }
 
                 if (!handler.Prefab.TryGetComponent(out T _)) {
-                    Debug.LogError($"Loaded object {handler.Prefab} does not contain {nameof(T)}.");
+                    Debug.LogError($"Loaded object {handler.Prefab} does not contain {typeof(T).Name}.");
                     return null;
                 }
                 
