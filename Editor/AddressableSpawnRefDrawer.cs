@@ -7,7 +7,7 @@ namespace Infohazard.Core.Addressables.Editor {
     [CustomPropertyDrawer(typeof(AddressableSpawnRefBase), true)]
     public class AddressableSpawnRefDrawer : PropertyDrawer {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
-            SerializedProperty childProp = property.FindPropertyRelative(AddressableSpawnRefBase.FieldNames.AssetReference);
+            SerializedProperty childProp = property.FindPropertyRelative(AddressableSpawnRefBase.PropNames.AssetReference);
             SerializedProperty guidProp = childProp.FindPropertyRelative("m_AssetGUID");
 
             EditorGUI.BeginChangeCheck();
