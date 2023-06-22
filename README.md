@@ -31,8 +31,6 @@ In addition to adding pooling support, this package makes it much easier to use 
 
 [API Docs](https://www.infohazardgames.com/docs/Infohazard.Core.Addressables/html/)
 
-[Tutorial](https://www.youtube.com/playlist?list=PLpnNr8QNHD90TDqamYqA95ENh4eIQVvhS)
-
 [Discord](https://discord.gg/V2jTnpS8zZ)
 
 ## License
@@ -47,21 +45,23 @@ You are welcome to have your own packages or assets depend on this package.
 
 Using the Package Manager is the easiest way to install the package to your project. Simply install the project as a git URL. Note that if you go this route, you will not be able to make any edits to the package.
 
-1. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
-2. In Unity, open the Package Manager (Window > Package Manager).
-3. Click the '+' button in the top right of the window.
-4. Click "Add package from git URL...".
-5. Paste in `https://github.com/infohazardgames/Infohazard.Core.Addressables.git`.
-6. Click Add.
+1. Install [UniTask](https://github.com/Cysharp/UniTask), through Package Manager or .unitypackage file.
+2. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
+3. In Unity, open the Package Manager (Window > Package Manager).
+4. Click the '+' button in the top right of the window.
+5. Click "Add package from git URL...".
+6. Paste in `https://github.com/infohazardgames/Infohazard.Core.Addressables.git`.
+7. Click Add.
 
 ### Method 2 - Git Submodule
 
 Using a git submodule is an option if you are using git for your project source control. This method will enable you to make changes to the package, but those changes will need to be tracked in a separate git repository.
 
-1. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
-2. Close the Unity Editor.
-3. Using your preferred git client or the command line, add `https://github.com/infohazardgames/Infohazard.Core.Addressables.git` as a submodule in your project's Packages folder.
-4. Re-open the Unity Editor.
+1. Install [UniTask](https://github.com/Cysharp/UniTask), through Package Manager or .unitypackage file.
+2. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
+3. Close the Unity Editor.
+4. Using your preferred git client or the command line, add `https://github.com/infohazardgames/Infohazard.Core.Addressables.git` as a submodule in your project's Packages folder.
+5. Re-open the Unity Editor.
 
 If you wish to make changes when you use this method, you'll need to fork the package repo. Once you've made your changes, you can submit a pull request to get those changes merged back to this repository if you wish.
 
@@ -75,15 +75,16 @@ If you wish to make changes when you use this method, you'll need to fork the pa
 
 If you wish to make changes to the library without dealing with a git submodule (or you aren't using git), you can simply copy the files into your project's Assets folder.
 
-1. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
-2. In the main page for this repo, click on Code > Download Zip.
-3. Extract the zip on your computer.
-4. Make a Infohazard.Core.Addressables folder under your project's Assets folder.
-5. Copy the `Editor` and `Runtime` folders from the extracted zip to the newly created folder.
+1. Install [UniTask](https://github.com/Cysharp/UniTask), through Package Manager or .unitypackage file.
+2. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
+3. In the main page for this repo, click on Code > Download Zip.
+4. Extract the zip on your computer.
+5. Make a Infohazard.Core.Addressables folder under your project's Assets folder.
+6. Copy the `Editor` and `Runtime` folders from the extracted zip to the newly created folder.
 
 ### Method 4 - Asset Store
 
-If you downloaded [Infohazard.Core](https://assetstore.unity.com/packages/add-ons/infohazard-core-utility-library-235104) from the asset store, this package is included as an inner unitypackage file. Simply open the package (`Assets/Plugins/Infohazard/Infohazard.Core/Integrations/Infohazard.Core.Addressables.unitypackage`) to add it.
+If you downloaded [Infohazard.Core](https://assetstore.unity.com/packages/add-ons/infohazard-core-utility-library-235104) from the asset store, this package is included as an inner unitypackage file. Simply open the package (`Assets/Plugins/Infohazard/Infohazard.Core/Integrations/Infohazard.Core.Addressables.unitypackage`) to add it. You will also need to install [UniTask](https://github.com/Cysharp/UniTask), through Package Manager or .unitypackage file.
 
 ## Setup
 
@@ -94,6 +95,12 @@ The only setup required beyond installation is to add references to the Infohaza
 ## Demo Scene
 
 The demo scene is provided to demonstrate the usage of Infohazard.Core.Addressables. It is located at `Assets/Plugins/Infohazard/Demos/Infohazard.Core.Addressables/Scenes/Demo_PoolingAndTiming_Addressables.unity`. This demo shows how you can implement the same functionality as the Infohazard.Core pooling demo using Addressables.
+
+For the demo to work, you need to mark the following two prefabs as addressable:
+ - `Assets/Plugins/Infohazard/Demos/Infohazard.Core.Addressables/Prefabs/PooledCubeAddressable.prefab`
+ - `Assets/Plugins/Infohazard/Demos/Infohazard.Core.Addressables/Prefabs/PooledExplosionAddressable.prefab`
+
+This is because Unity does not save the addressable state of assets in a package.
 
 ## Features Guide
 

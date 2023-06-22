@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45ce3f2c493f63940b0c561b8193002f, type: 3}
+  m_Name: Infohazard.Core.Addressables
+  m_EditorClassIdentifier: 
+  _removeFolder: {fileID: 102900000, guid: b1cb7a7c0e30b5fa5cbd0cf73804edca, type: 3}
+  _prependFolder: {fileID: 102900000, guid: fd4244df7819dac4fa05162660ea8551, type: 3}
+  _paths:
+  - {fileID: 102900000, guid: ab411e009c79ff94284160556bcca6b8, type: 3}
+  - {fileID: 102900000, guid: 0041a03538c26e44e88987902611e770, type: 3}
+  - {fileID: 102900000, guid: dd259dedeefe80143a6f90248a95b33d, type: 3}
+  - {fileID: 5897886265953266890, guid: 6b033b4c9e4a3f0478f43a6a74998585, type: 3}
+  - {fileID: 102900000, guid: ba6298176b881c64da2e84ae2af00f82, type: 3}
+  - {fileID: 102900000, guid: dd2835ee952552148a1aeadb53459d8d, type: 3}
+  _package: {fileID: 8385607101436470782, guid: 8ce57a92f0947d14c96b09bc9fd71718, type: 3}
+  _lastExportPath: Assets/Plugins/Infohazard/Infohazard.Core/Integrations
