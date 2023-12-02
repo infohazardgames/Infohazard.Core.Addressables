@@ -156,5 +156,35 @@ namespace Infohazard.Core.Addressables {
 
             return result;
         }
+
+        /// <summary>
+        /// Check for equality between two objects, where two objects with the same name are considered equal.
+        /// </summary>
+        /// <remarks>
+        /// This is needed when one object is loaded through addressables and the other through a direct reference.
+        /// Of course, it will return true for two different objects that happen to share a name,
+        /// so must be used carefully.
+        /// </remarks>
+        /// <param name="object1">First object.</param>
+        /// <param name="object2">Second object.</param>
+        /// <typeparam name="T">Type of objects.</typeparam>
+        /// <returns>Whether the objects are the same asset.</returns>
+        public static bool NameEqual<T>(T object1, T object2) where T : Object {
+            // Fastest check: reference equality.
+            if (ReferenceEquals(object1, object2)) return true;
+
+            // Slower: comparison to null, which includes object lifetime check for fake null.
+            bool obj1Null = object1 == null;
+            bool obj2Null = object2 == null;
+
+            // Both objects either null or destroyed.
+            if (obj1Null && obj2Null) return true;
+
+            // Only one object null or destroyed
+            if (obj1Null || obj2Null) return false;
+
+            // Finally check names in case objects are same asset but different instances due to Addressables.
+            return object1.name == object2.name;
+        }
     }
 }
