@@ -12,10 +12,9 @@ namespace Infohazard.Core.Addressables {
     /// </summary>
     [Serializable]
     public abstract class AddressableSpawnRefBase {
-        /// <summary>
-        /// (Serialized) Reference to the addressable prefab to spawn.
-        /// </summary>
-        [SerializeField] protected AssetReferenceGameObject _assetReference;
+        [SerializeField]
+        [Tooltip("Reference to the addressable prefab to spawn.")]
+        protected AssetReferenceGameObject _assetReference;
 
         /// <summary>
         /// Reference to the addressable prefab to spawn.
@@ -43,18 +42,18 @@ namespace Infohazard.Core.Addressables {
         /// Whether there is a valid asset reference.
         /// </summary>
         public bool IsValid => _assetReference?.RuntimeKeyIsValid() == true;
-        
+
         /// <summary>
         /// Whether the referenced asset has been loaded successfully and the
         /// <see cref="AddressableSpawnRef"/> is retained at least once.
         /// </summary>
         public bool Loaded => _prefab != null && _handler is { State: AddressablePoolHandler.LoadState.Loaded };
-        
+
         /// <summary>
         /// Number of users of the <see cref="AddressableSpawnRef"/>
         /// </summary>
         public int RetainCount { get; private set; }
-        
+
         /// <summary>
         /// Prefab to be spawned, if it is loaded.
         /// </summary>
@@ -103,7 +102,7 @@ namespace Infohazard.Core.Addressables {
 
             _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
             _handler.Retain();
-            
+
             return WaitUntilLoadedAsync();
         }
 
@@ -117,7 +116,7 @@ namespace Infohazard.Core.Addressables {
             await _handler.WaitUntilLoadedAsync();
             ValidateLoadedHandler();
         }
-        
+
         /// <summary>
         /// Add a user to the <see cref="AddressableSpawnRef"/>,
         /// creating the <see cref="AddressablePoolHandler"/> if necessary.
@@ -125,10 +124,10 @@ namespace Infohazard.Core.Addressables {
         /// </summary>
         public virtual void RetainAndWait() {
             RetainCount++;
-            
+
             _handler ??= AddressableUtil.GetOrCreatePoolHandler(_assetReference.RuntimeKey);
             _handler.Retain();
-            
+
             WaitUntilLoaded();
         }
 
@@ -157,7 +156,7 @@ namespace Infohazard.Core.Addressables {
         protected virtual bool ValidateLoadedHandler() {
             if (_prefab) return true;
             if (_handler.State == AddressablePoolHandler.LoadState.Failed) return false;
-            
+
             if (!ValidateObject(_handler.Prefab, out _prefab)) {
                 Debug.LogError($"Loaded object {_handler.Prefab} does not contain {nameof(T)}.");
                 _prefab = null;
@@ -188,7 +187,7 @@ namespace Infohazard.Core.Addressables {
                 _prefab = null;
             }
         }
-        
+
         /// <summary>
         /// Spawn an instance of <see cref="Prefab"/>. The <see cref="AddressableSpawnRef"/> MUST be retained.
         /// </summary>
@@ -221,7 +220,7 @@ namespace Infohazard.Core.Addressables {
         /// Default constructor (needed for Unity serialization).
         /// </summary>
         public AddressableSpawnRef() { }
-        
+
         /// <summary>
         /// Construct with a given asset reference.
         /// </summary>
@@ -243,7 +242,7 @@ namespace Infohazard.Core.Addressables {
         /// Default constructor (needed for Unity serialization).
         /// </summary>
         public AddressableSpawnRef() { }
-        
+
         /// <summary>
         /// Construct with a given asset reference.
         /// </summary>

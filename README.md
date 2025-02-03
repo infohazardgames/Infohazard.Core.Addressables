@@ -127,3 +127,5 @@ Note that you can still use `TimeToLive` just fine with Addressable prefabs, but
 You should not have an Addressable prefab spawn another prefab via a direct reference (use Addressables instead).
 
 Example: a bullet prefab is loaded from an Addressable asset, and spawns an impact VFX prefab when it hits (through direct reference, not addressable). The last remaining bullet object in the scene impacts, spawns its VFX, and is destroyed. Because it was the last intance, the Addressable asset for that bullet becomes unloaded. Unfortunately, this means that the texture and material used for the VFX is also unloaded, since it was only loaded due to being referenced by the bullet Addressable. This leads to the particles being replacd by PINK SQUARES OF DEATH.
+
+Solution: the bullet must also spawn its impact object through an addressable reference.
