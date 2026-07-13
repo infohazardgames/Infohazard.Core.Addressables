@@ -185,6 +185,7 @@ namespace Infohazard.Core.Addressables {
 
             if (RetainCount == 0) {
                 _prefab = null;
+                _handler = null;
             }
         }
 
