@@ -27,11 +27,8 @@ namespace Infohazard.Core.Addressables {
         /// </remarks>
         public int ReferenceCount { get; private set; }
 
-        /// <summary>
-        /// Loading operation for the addressable if it is loading or loaded.
-        /// </summary>
-        public AsyncOperationHandle<GameObject> LoadOperation { get; private set; }
-
+        private AsyncOperationHandle<GameObject> _loadOperation;
+        private UniTaskCompletionSource _loadCompletionSource;
         private readonly Action<Spawnable> _spawnedObjectDestroyedDelegate;
 
         /// <summary>
@@ -51,26 +48,32 @@ namespace Infohazard.Core.Addressables {
             return $"{GetType().Name} ({Key}) ({prefabString})";
         }
 
-        protected virtual void LoadCompleted(AsyncOperationHandle<GameObject> operation) {
+        protected virtual void HandleCompletion(AsyncOperationHandle<GameObject> operation) {
             if (State != LoadState.Loading) return;
-            
-            if (operation.Status == AsyncOperationStatus.Succeeded &&
-                operation.Result.TryGetComponent(out Spawnable spawnable)) {
-                State = LoadState.Loaded;
-                Prefab = spawnable;
-                
-                // If everyone releases the handler before loading completes, just immediately discard.
-                CheckClear();
-                return;
-            }
 
             if (operation.Status == AsyncOperationStatus.Succeeded) {
-                Debug.LogError($"Asset loaded by {this} must have a Spawnable component.");
-                UnityEngine.AddressableAssets.Addressables.Release(operation);
+                if (operation.Result.TryGetComponent(out Spawnable spawnable)) {
+                    State = LoadState.Loaded;
+                    Prefab = spawnable;
+
+                    // If everyone releases the handler before loading completes, just immediately discard.
+                    if (!CheckClear()) {
+                        _loadCompletionSource?.TrySetResult();
+                    }
+
+                    return;
+                } else {
+                    _loadCompletionSource?.TrySetException(
+                        new MissingComponentException($"Asset loaded by {this} must have a Spawnable component."));
+                    UnityEngine.AddressableAssets.Addressables.Release(operation);
+                }
+            } else {
+                _loadCompletionSource?.TrySetException(
+                    operation.OperationException ?? new Exception($"Failed to load addressable with key '{Key}'."));
             }
 
             State = LoadState.Failed;
-            LoadOperation = default;
+            _loadOperation = default;
             Prefab = null;
         }
 
@@ -115,7 +118,7 @@ namespace Infohazard.Core.Addressables {
         /// <inheritdoc/>
         public override Spawnable Spawn() {
             if (!EnsureLoaded()) return null;
-            
+
             Spawnable instance = base.Spawn();
             ReferenceCount++;
             return instance;
@@ -127,7 +130,7 @@ namespace Infohazard.Core.Addressables {
                 Debug.LogError($"Reference count for {this} trying to go negative (this should not happen).");
                 return;
             }
-            
+
             base.Despawn(instance);
             ReferenceCount--;
             CheckClear();
@@ -145,7 +148,15 @@ namespace Infohazard.Core.Addressables {
                 Pool.Remove(spawnable);
             }
         }
-        
+
+        private void StartLoadingIfNeeded() {
+            if (State != LoadState.NotLoaded) return;
+            _loadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
+            _loadCompletionSource = new UniTaskCompletionSource();
+            _loadOperation.Completed += HandleCompletion;
+            State = LoadState.Loading;
+        }
+
         /// <summary>
         /// Add a user to the <see cref="AddressablePoolHandler"/>.
         /// If not already loaded, the prefab will be loaded asynchronously.
@@ -155,25 +166,27 @@ namespace Infohazard.Core.Addressables {
         /// </remarks>
         public UniTask RetainAndWaitAsync() {
             base.Retain();
-            
-            if (State == LoadState.NotLoaded) {
-                LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
-                State = LoadState.Loading;
+
+            StartLoadingIfNeeded();
+            if (State == LoadState.Loaded) {
+                return UniTask.CompletedTask;
             }
 
-            return WaitUntilLoadedAsync();
+            return _loadCompletionSource?.Task ?? UniTask.CompletedTask;
         }
 
         /// <summary>
         /// If the prefab is currently loading, wait until it is done asynchronously.
         /// </summary>
-        /// <remarks>
-        /// This will not start loading the prefab if it is not already loading.
-        /// </remarks>
-        public async UniTask WaitUntilLoadedAsync() {
-            if (State != LoadState.Loading) return;
-            await LoadOperation;
-            LoadCompleted(LoadOperation);
+        /// <exception cref="InvalidOperationException">Thrown if the prefab is not loaded or loading.</exception>
+        public UniTask WaitUntilLoadedAsync() {
+            if (State == LoadState.NotLoaded) {
+                throw new InvalidOperationException("Cannot wait for a prefab that is not loaded or loading.");
+            } else if (State == LoadState.Loaded) {
+                return UniTask.CompletedTask;
+            }
+
+            return _loadCompletionSource?.Task ?? UniTask.CompletedTask;
         }
 
         /// <summary>
@@ -183,26 +196,36 @@ namespace Infohazard.Core.Addressables {
         public void RetainAndWait() {
             base.Retain();
 
-            if (State == LoadState.NotLoaded) {
-                LoadOperation = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<GameObject>(Key);
-                State = LoadState.Loading;
-            }
-            
+            StartLoadingIfNeeded();
             WaitUntilLoaded();
         }
-        
+
         /// <summary>
         /// If the prefab is currently loading, wait until it is done synchronously.
         /// </summary>
-        /// <remarks>
-        /// This will not start loading the prefab if it is not already loading.
-        /// </remarks>
+        /// <exception cref="InvalidOperationException">Thrown if the prefab is not loaded or loading.</exception>
         public void WaitUntilLoaded() {
-            if (State != LoadState.Loading) return;
-            LoadOperation.WaitForCompletion();
-            LoadCompleted(LoadOperation);
+            if (State == LoadState.NotLoaded) {
+                throw new InvalidOperationException("Cannot wait for a prefab that is not loaded or loading.");
+            } else if (State == LoadState.Loaded) {
+                return;
+            } else if (State == LoadState.Failed) {
+                _loadCompletionSource?.GetResult(0);
+                throw new InvalidOperationException($"Failed to load addressable with key '{Key}'.");
+            }
+
+            UniTaskCompletionSource completionSource = _loadCompletionSource;
+            _loadOperation.WaitForCompletion();
+
+            // The callback may not be invoked synchronously in all cases (e.g. on failure).
+            // We need to invoke it here so the handler is ready when the method returns.
+            // A subsequent call to HandleCompletion from the operation will be a no-op because State is no longer Loading.
+            HandleCompletion(_loadOperation);
+
+            // Immediately throw any exception or cancellation that occurred during loading.
+            completionSource?.GetResult(0);
         }
-        
+
         /// <summary>
         /// Add a user to the <see cref="AddressablePoolHandler"/>.
         /// </summary>
@@ -230,12 +253,13 @@ namespace Infohazard.Core.Addressables {
         protected override void Clear() {
             base.Clear();
 
-            // If unloaded or failed, nothing to do.
-            // If loading, the following will be taken care of in the LoadCompleted callback.
-            if (State != LoadState.Loaded) return;
-            
-            UnityEngine.AddressableAssets.Addressables.Release(LoadOperation);
-            LoadOperation = default;
+            if (_loadOperation.IsValid()) {
+                UnityEngine.AddressableAssets.Addressables.Release(_loadOperation);
+            }
+
+            _loadCompletionSource?.TrySetCanceled();
+            _loadCompletionSource = null;
+            _loadOperation = default;
             Prefab = null;
             State = LoadState.NotLoaded;
         }

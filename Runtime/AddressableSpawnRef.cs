@@ -155,6 +155,10 @@ namespace Infohazard.Core.Addressables {
 
         protected virtual bool ValidateLoadedHandler() {
             if (_prefab) return true;
+            if (_handler == null) {
+                throw new OperationCanceledException();
+            }
+
             if (_handler.State == AddressablePoolHandler.LoadState.Failed) return false;
 
             if (!ValidateObject(_handler.Prefab, out _prefab)) {
