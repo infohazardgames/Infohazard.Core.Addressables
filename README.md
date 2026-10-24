@@ -17,7 +17,7 @@
   - [Demo Scene](#demo-scene)
   - [Features Guide](#features-guide)
     - [AddressableSpawnRef](#addressablespawnref)
-    - [AdddressableUtil](#adddressableutil)
+    - [AddressableUtil](#addressableutil)
     - [TimeToLiveAddressable](#timetoliveaddressable)
   - [Addendum: Avoiding Spawned Prefab Unloading Issue](#addendum-avoiding-spawned-prefab-unloading-issue)
 
@@ -25,7 +25,7 @@
 
 Infohazard.Core.Addressables is an extension for [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) which adds support in the pooling system for [Addressables](https://docs.unity3d.com/Manual/com.unity.addressables.html). It is kept separate so that you can use Infohazard.Core without having the Addressables package imported.
 
-In addition to adding pooling support, this package makes it much easier to use Addressable prefabs. When using the pakage, you no longer have to keep track of when to unload an Addressable asset. Instead, you just release individual references when you are done with them, and the asset will be unloaded once all references are released and all instances are despawned.
+In addition to adding pooling support, this package makes it much easier to use Addressable prefabs. When using the package, you no longer have to keep track of when to unload an Addressable asset. Instead, you just release individual references when you are done with them, and the asset will be unloaded once all references are released and all instances are despawned.
 
 ## Documentation and Support
 
@@ -79,7 +79,7 @@ If you wish to make changes to the library without dealing with a git submodule 
 2. Ensure [Infohazard.Core](https://github.com/infohazardgames/Infohazard.Core) is installed.
 3. In the main page for this repo, click on Code > Download Zip.
 4. Extract the zip on your computer.
-5. Make a Infohazard.Core.Addressables folder under your project's Assets folder.
+5. Make an Infohazard.Core.Addressables folder under your project's Assets folder.
 6. Copy the `Editor` and `Runtime` folders from the extracted zip to the newly created folder.
 
 ### Method 4 - Asset Store
@@ -110,7 +110,7 @@ The `AddressableSpawnRef` serializable class provides a convenient way to use th
 
 In your code, you must first call `Retain()` (or one of the async/blocking variants) to load the Addressable, then call `Spawn()` in order to spawn it. Finally, call `Release()` when you no longer need to use that specific `AddressableSpawnRef`. The system will internally keep the Addressable asset loaded until all instances are despawned AND all `AddressableSpawnRef`s have been released. This way, you don't have to worry about when to unload an Addressable - only when you don't need this specific reference to it. Additionally, as long as at least one `AddressableSpawnRef` is retained, the prefab will not be unloaded even if there are no spawned instances.
 
-### AdddressableUtil
+### AddressableUtil
 
 The `AddressableUtil` class provides static methods for spawning Addressable prefabs using the pooling system. It provides both synchronous and asynchronous methods for spawning Addressable prefabs based on a key (which can be a GUID, path, or AssetReference).
 
@@ -126,6 +126,6 @@ Note that you can still use `TimeToLive` just fine with Addressable prefabs, but
 
 You should not have an Addressable prefab spawn another prefab via a direct reference (use Addressables instead).
 
-Example: a bullet prefab is loaded from an Addressable asset, and spawns an impact VFX prefab when it hits (through direct reference, not addressable). The last remaining bullet object in the scene impacts, spawns its VFX, and is destroyed. Because it was the last intance, the Addressable asset for that bullet becomes unloaded. Unfortunately, this means that the texture and material used for the VFX is also unloaded, since it was only loaded due to being referenced by the bullet Addressable. This leads to the particles being replacd by PINK SQUARES OF DEATH.
+Example: a bullet prefab is loaded from an Addressable asset, and spawns an impact VFX prefab when it hits (through direct reference, not addressable). The last remaining bullet object in the scene impacts, spawns its VFX, and is destroyed. Because it was the last instance, the Addressable asset for that bullet becomes unloaded. Unfortunately, this means that the texture and material used for the VFX is also unloaded, since it was only loaded due to being referenced by the bullet Addressable. This leads to the particles being replaced by PINK SQUARES OF DEATH.
 
 Solution: the bullet must also spawn its impact object through an addressable reference.
