@@ -145,7 +145,7 @@ namespace Infohazard.Core.Addressables {
                 ReferenceCount--;
                 CheckClear();
             } else {
-                Pool.Remove(spawnable);
+                Debug.LogError($"Spawned object {spawnable} destroyed without being spawned (this should not happen).");
             }
         }
 
