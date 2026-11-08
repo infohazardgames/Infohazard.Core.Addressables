@@ -18,14 +18,18 @@ namespace Infohazard.Core.Addressables {
         /// <returns>The spawned object.</returns>
         public static async UniTask<GameObject> SpawnAddressableAsync(object key, SpawnParams spawnParams = default) {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
+            if (handler == null) return null;
 
-            await handler.RetainAndWaitAsync();
+            // Retain inside the try, so the retain is released even if the load throws.
             try {
+                await handler.RetainAndWaitAsync();
                 if (handler.State == AddressablePoolHandler.LoadState.Failed) {
                     return null;
                 }
                 
-                GameObject result = PoolManager.Instance.SpawnFromKey(key, spawnParams).gameObject;
+                Spawnable spawned = PoolManager.Instance.SpawnFromKey(key, spawnParams);
+                if (!spawned) return null;
+                GameObject result = spawned.gameObject;
                 return result;
             } finally {
                 handler.Release();
@@ -46,14 +50,18 @@ namespace Infohazard.Core.Addressables {
         /// <returns>The spawned object.</returns>
         public static GameObject SpawnAddressable(object key, SpawnParams spawnParams = default) {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
+            if (handler == null) return null;
 
-            handler.RetainAndWait();
+            // Retain inside the try, so the retain is released even if the load throws.
             try {
+                handler.RetainAndWait();
                 if (handler.State == AddressablePoolHandler.LoadState.Failed) {
                     return null;
                 }
                 
-                GameObject result = PoolManager.Instance.SpawnFromKey(key, spawnParams).gameObject;
+                Spawnable spawned = PoolManager.Instance.SpawnFromKey(key, spawnParams);
+                if (!spawned) return null;
+                GameObject result = spawned.gameObject;
                 return result;
             } finally {
                 handler.Release();
@@ -76,9 +84,11 @@ namespace Infohazard.Core.Addressables {
         /// <returns>The component of the given type on the spawned object.</returns>
         public static async UniTask<T> SpawnAddressableAsync<T>(object key, SpawnParams spawnParams = default) where T : class {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
+            if (handler == null) return null;
 
-            await handler.RetainAndWaitAsync();
+            // Retain inside the try, so the retain is released even if the load throws.
             try {
+                await handler.RetainAndWaitAsync();
                 if (handler.State == AddressablePoolHandler.LoadState.Failed) {
                     return null;
                 }
@@ -88,7 +98,9 @@ namespace Infohazard.Core.Addressables {
                     return null;
                 }
                 
-                GameObject obj = PoolManager.Instance.SpawnFromKey(key, spawnParams).gameObject;
+                Spawnable spawned = PoolManager.Instance.SpawnFromKey(key, spawnParams);
+                if (!spawned) return null;
+                GameObject obj = spawned.gameObject;
                 T component = obj.GetComponent<T>();
                 return component;
             } finally {
@@ -111,9 +123,11 @@ namespace Infohazard.Core.Addressables {
         /// <returns>The component of the given type on the spawned object.</returns>
         public static T SpawnAddressable<T>(object key, SpawnParams spawnParams = default) where T : class {
             AddressablePoolHandler handler = GetOrCreatePoolHandler(key);
+            if (handler == null) return null;
 
-            handler.RetainAndWait();
+            // Retain inside the try, so the retain is released even if the load throws.
             try {
+                handler.RetainAndWait();
                 if (handler.State == AddressablePoolHandler.LoadState.Failed) {
                     return null;
                 }
@@ -123,7 +137,9 @@ namespace Infohazard.Core.Addressables {
                     return null;
                 }
                 
-                GameObject obj = PoolManager.Instance.SpawnFromKey(key, spawnParams).gameObject;
+                Spawnable spawned = PoolManager.Instance.SpawnFromKey(key, spawnParams);
+                if (!spawned) return null;
+                GameObject obj = spawned.gameObject;
                 T component = obj.GetComponent<T>();
                 return component;
             } finally {

@@ -11,7 +11,7 @@ namespace Infohazard.Core.Addressables {
     /// that prefab may be unloaded with the addressable.
     /// </remarks>
     public class TimeToLiveAddressable : TimeToLive {
-        [SerializeField] private AddressableSpawnRef _spawnOnDeathAddress;
+        [SerializeField] private AddressableSpawnRef _spawnOnDeathAddress = new();
 
         protected override void Awake() {
             base.Awake();

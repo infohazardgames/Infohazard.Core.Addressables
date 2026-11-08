@@ -75,7 +75,8 @@ namespace Infohazard.Core.Addressables {
         /// <inheritdoc/>
         public override string ToString() {
             string prefabString = Prefab ? Prefab.name : "null";
-            return $"{GetType().Name} ({AssetReference.AssetGUID}) ({prefabString})";
+            string guidString = AssetReference != null ? AssetReference.AssetGUID : "null";
+            return $"{GetType().Name} ({guidString}) ({prefabString})";
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -162,7 +163,7 @@ namespace Infohazard.Core.Addressables {
             if (_handler.State == AddressablePoolHandler.LoadState.Failed) return false;
 
             if (!ValidateObject(_handler.Prefab, out _prefab)) {
-                Debug.LogError($"Loaded object {_handler.Prefab} does not contain {nameof(T)}.");
+                Debug.LogError($"Loaded object {_handler.Prefab} does not contain {typeof(T).Name}.");
                 _prefab = null;
                 return false;
             }
@@ -209,7 +210,19 @@ namespace Infohazard.Core.Addressables {
                 return null;
             }
 
-            ValidateObject(PoolManager.Instance.SpawnFromKey(_assetReference.AssetGUID, spawnParams), out T result);
+            // Use the same key the handler was retained under (RuntimeKey includes any sub-object name).
+            Spawnable spawned = PoolManager.Instance.SpawnFromKey(_assetReference.RuntimeKey, spawnParams);
+
+            // The handler logs its own error if it couldn't spawn (e.g. the load failed).
+            if (!spawned) return null;
+
+            if (!ValidateObject(spawned, out T result)) {
+                // Don't leave an instance spawned that the caller never receives.
+                Debug.LogError($"Spawned object {spawned} does not contain {typeof(T).Name}.");
+                Spawnable.Despawn(spawned);
+                return null;
+            }
+
             return result;
         }
 

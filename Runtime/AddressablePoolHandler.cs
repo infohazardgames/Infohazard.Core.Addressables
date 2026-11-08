@@ -51,6 +51,8 @@ namespace Infohazard.Core.Addressables {
         protected virtual void HandleCompletion(AsyncOperationHandle<GameObject> operation) {
             if (State != LoadState.Loading) return;
 
+            Exception exception;
+
             if (operation.Status == AsyncOperationStatus.Succeeded) {
                 if (operation.Result.TryGetComponent(out Spawnable spawnable)) {
                     State = LoadState.Loaded;
@@ -62,19 +64,24 @@ namespace Infohazard.Core.Addressables {
                     }
 
                     return;
-                } else {
-                    _loadCompletionSource?.TrySetException(
-                        new MissingComponentException($"Asset loaded by {this} must have a Spawnable component."));
-                    UnityEngine.AddressableAssets.Addressables.Release(operation);
                 }
+
+                exception = new MissingComponentException($"Asset loaded by {this} must have a Spawnable component.");
             } else {
-                _loadCompletionSource?.TrySetException(
-                    operation.OperationException ?? new Exception($"Failed to load addressable with key '{Key}'."));
+                exception = operation.OperationException ??
+                            new Exception($"Failed to load addressable with key '{Key}'.");
             }
 
+            // Update state before completing the task, because awaiting code resumes synchronously inside
+            // TrySetException and must already see the failure. Failed operations must be released too.
             State = LoadState.Failed;
             _loadOperation = default;
             Prefab = null;
+            if (operation.IsValid()) {
+                UnityEngine.AddressableAssets.Addressables.Release(operation);
+            }
+
+            _loadCompletionSource?.TrySetException(exception);
         }
 
         protected virtual bool EnsureLoaded() {
@@ -144,9 +151,10 @@ namespace Infohazard.Core.Addressables {
                 }
                 ReferenceCount--;
                 CheckClear();
-            } else {
-                Debug.LogError($"Spawned object {spawnable} destroyed without being spawned (this should not happen).");
             }
+
+            // An instance that isn't spawned is sitting in the pool, and is destroyed along with it
+            // (e.g. when the PoolManager is destroyed on scene change), so there is nothing to update.
         }
 
         private void StartLoadingIfNeeded() {
@@ -233,7 +241,7 @@ namespace Infohazard.Core.Addressables {
         /// Does not wait for the loading to finish.
         /// </remarks>
         public override void Retain() {
-            base.Retain();
+            // RetainAndWaitAsync increments the retain count itself.
             RetainAndWaitAsync().Forget();
         }
 
