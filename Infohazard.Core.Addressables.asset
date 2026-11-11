@@ -19,7 +19,7 @@ MonoBehaviour:
   - {fileID: 102900000, guid: 0041a03538c26e44e88987902611e770, type: 3}
   - {fileID: 102900000, guid: dd259dedeefe80143a6f90248a95b33d, type: 3}
   - {fileID: 5897886265953266890, guid: 6b033b4c9e4a3f0478f43a6a74998585, type: 3}
-  - {fileID: 102900000, guid: ba6298176b881c64da2e84ae2af00f82, type: 3}
+  - {fileID: 4900000, guid: 8d44d87d444563a489fe680d15779069, type: 3}
   - {fileID: 102900000, guid: dd2835ee952552148a1aeadb53459d8d, type: 3}
   _package: {fileID: 8385607101436470782, guid: 8ce57a92f0947d14c96b09bc9fd71718, type: 3}
   _lastExportPath: Assets/Plugins/Infohazard/Infohazard.Core/Integrations
