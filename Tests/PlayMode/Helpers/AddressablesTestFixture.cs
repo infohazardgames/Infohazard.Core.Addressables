@@ -130,7 +130,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         /// </summary>
         protected GameObject RegisterPrefab(string key, TestPrefabProvider.Behavior behavior =
                                                 TestPrefabProvider.Behavior.Succeed, bool withSpawnable = true) {
-            var prefab = new GameObject($"Prefab_{key}");
+            GameObject prefab = new GameObject($"Prefab_{key}");
             prefab.SetActive(false);
             if (withSpawnable) prefab.AddComponent<Spawnable>();
             _tracked.Add(prefab);
@@ -141,7 +141,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         }
 
         protected GameObject Create(string name, bool active = true) {
-            var obj = new GameObject(name);
+            GameObject obj = new GameObject(name);
             obj.SetActive(active);
             _tracked.Add(obj);
             return obj;

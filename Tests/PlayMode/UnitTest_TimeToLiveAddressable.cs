@@ -31,7 +31,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         private TimeToLiveAddressable CreateTimeToLive(float timeToLive, AddressableSpawnRef spawnOnDeath) {
             GameObject obj = Create("TimeToLive", active: false);
             obj.transform.SetPositionAndRotation(Position, Rotation);
-            var ttl = obj.AddComponent<TimeToLiveAddressable>();
+            TimeToLiveAddressable ttl = obj.AddComponent<TimeToLiveAddressable>();
             SetField(ttl, "_timeToLive", timeToLive);
             SetField(ttl, "_spawnOnDeathAddress", spawnOnDeath);
             obj.SetActive(true);
@@ -112,7 +112,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         public void AddedFromCode_WithNothingAssigned_DoesNotThrow() {
             GameObject obj = Create("TimeToLive");
 
-            var ttl = obj.AddComponent<TimeToLiveAddressable>();
+            TimeToLiveAddressable ttl = obj.AddComponent<TimeToLiveAddressable>();
             Object.DestroyImmediate(ttl);
 
             LogAssert.NoUnexpectedReceived();

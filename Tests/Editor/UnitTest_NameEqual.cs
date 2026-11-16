@@ -19,7 +19,7 @@ namespace Infohazard.Core.Addressables.Tests.Editor {
         }
 
         private GameObject Create(string name) {
-            var obj = new GameObject(name);
+            GameObject obj = new GameObject(name);
             _created.Add(obj);
             return obj;
         }

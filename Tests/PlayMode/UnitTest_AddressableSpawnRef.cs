@@ -50,7 +50,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public async Task RetainAndWait_LoadsPrefabAndReleaseUnloads() {
             GameObject prefab = RegisterPrefab(_guid);
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
 
             spawnRef.RetainAndWait();
 
@@ -68,7 +68,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public async Task RetainAndWaitAsync_LoadsPrefab() {
             GameObject prefab = RegisterPrefab(_guid, TestPrefabProvider.Behavior.Delayed);
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
 
             Task task = spawnRef.RetainAndWaitAsync().AsTask();
             Provider.Complete(_guid);
@@ -82,7 +82,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public async Task Retain_ThenWaitUntilLoadedAsync_Loads() {
             RegisterPrefab(_guid);
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
 
             spawnRef.Retain();
             await spawnRef.WaitUntilLoadedAsync();
@@ -95,8 +95,8 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public async Task TwoRefs_SameAsset_ShareHandlerAndLoad() {
             RegisterPrefab(_guid);
-            var a = new AddressableSpawnRef(Reference());
-            var b = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef a = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef b = new AddressableSpawnRef(Reference());
 
             a.RetainAndWait();
             b.RetainAndWait();
@@ -112,7 +112,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
 
         [Test]
         public void Release_BeforeRetain_LogsError() {
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
             LogAssert.Expect(LogType.Error, new Regex("Trying to release non-loaded"));
             spawnRef.Release();
         }
@@ -124,7 +124,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public async Task Spawn_ReturnsInstanceWithSpawnParams() {
             GameObject prefab = RegisterPrefab(_guid);
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
             spawnRef.RetainAndWait();
 
             GameObject instance = spawnRef.Spawn(new SpawnParams { Position = new Vector3(1, 2, 3) });
@@ -143,7 +143,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         public async Task GenericRef_SpawnReturnsComponent() {
             GameObject prefab = RegisterPrefab(_guid);
             prefab.AddComponent<BoxCollider>();
-            var spawnRef = new AddressableSpawnRef<BoxCollider>(Reference());
+            AddressableSpawnRef<BoxCollider> spawnRef = new AddressableSpawnRef<BoxCollider>(Reference());
             spawnRef.RetainAndWait();
 
             Assert.That(spawnRef.Prefab, Is.SameAs(prefab.GetComponent<BoxCollider>()));
@@ -158,7 +158,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
 
         [Test]
         public void Spawn_BeforeRetain_LogsErrorAndReturnsNull() {
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
             LogAssert.Expect(LogType.Error, new Regex("Trying to spawn non-loaded"));
             Assert.That(spawnRef.Spawn(), Is.Null);
         }
@@ -166,7 +166,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public async Task GenericRef_PrefabMissingComponent_LogsTypeNameAndSpawnsNothing() {
             RegisterPrefab(_guid);
-            var spawnRef = new AddressableSpawnRef<SphereCollider>(Reference());
+            AddressableSpawnRef<SphereCollider> spawnRef = new AddressableSpawnRef<SphereCollider>(Reference());
 
             LogAssert.Expect(LogType.Error, new Regex("does not contain SphereCollider"));
             spawnRef.RetainAndWait();
@@ -184,7 +184,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public void Spawn_AfterFailedLoad_ReturnsNullWithoutThrowing() {
             RegisterPrefab(_guid, TestPrefabProvider.Behavior.Fail);
-            var spawnRef = new AddressableSpawnRef(Reference());
+            AddressableSpawnRef spawnRef = new AddressableSpawnRef(Reference());
             Assert.That(() => spawnRef.RetainAndWait(), Throws.Exception);
 
             LogAssert.Expect(LogType.Error, new Regex("Attempting to instantiate using failed"));

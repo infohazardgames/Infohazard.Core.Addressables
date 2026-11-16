@@ -28,7 +28,7 @@ namespace Infohazard.Core.Addressables.Tests.PlayMode {
         [Test]
         public void GetOrCreatePoolHandler_KeyOwnedByOtherHandler_LogsErrorAndReturnsNull() {
             GameObject prefab = Create("Plain", active: false);
-            var otherHandler = new DefaultPoolHandler(prefab.AddComponent<Spawnable>(), prefab.transform);
+            DefaultPoolHandler otherHandler = new DefaultPoolHandler(prefab.AddComponent<Spawnable>(), prefab.transform);
             PoolManager.Instance.AddPoolHandler(Key, otherHandler);
 
             LogAssert.Expect(LogType.Error, new Regex("A handler already exists for key"));
